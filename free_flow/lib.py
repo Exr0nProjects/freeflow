@@ -22,18 +22,11 @@ def Print(x):
 
 
 
-
-def SimpleTee(*funcs):
-    def fn(x):
-        return map(lambda f: f(x), funcs)
-    return fn
-
-def EagerTee(*funcs):
-    def fn(x):
-        return [f(x) for f in funcs]
-    return fn
-
-
+def Inspect(label: str):
+    def ret(x):
+        print(label + ":", x)
+        return x
+    return ret
 
 class Segment(ABC):
     def __init__(self):
@@ -45,15 +38,6 @@ class Segment(ABC):
     def eager(self, v: bool):
         self._eager = v
 
-class Tee(Segment):
-    def __init__(self, *funcs):
-        self.funcs = funcs
-        super().__init__()
-
-    def __call__(self, x):
-        if self.eager: return [f(x) for f in self.funcs]
-        else: return map(lambda f: f(x), self.funcs)
-
 
 def compose(*funcs: List[Callable]):
     def composition(x):
@@ -61,6 +45,15 @@ def compose(*funcs: List[Callable]):
             x = f(x)
         return x
     return composition
+
+class T(Segment):
+    def __init__(self, *funcs_lists: Iterable[Callable or Iterable[Callable]]):
+        self.funcs = [compose(*fl) if isinstance(fl, Iterable) else fl for fl in funcs_lists]
+
+    def __call__(self, x):
+        if self.eager: return [f(x) for f in self.funcs]
+        else: return map(lambda f: f(x), self.funcs)
+
 
 def ff(x_arr, eager=False):
     def split_composition(funcs, x):
@@ -77,13 +70,11 @@ def ff(x_arr, eager=False):
         return [split_composition(funcs, x) for x in x_arr]
     return gen_eager if eager else gen
 
+# TODO: print the graph! https://github.com/pydot/pydot
+
 if __name__ == '__main__':
+    x = ff('hello', eager=True)(
+        Inspect("initial"), T( Print,
+                              [ord, lambda x: x**2]), Inspect("after tee"))
 
-    x = ff('hello', eager=False)(Tee(Print, compose(Ret1, Print)))
-    print([[*y] for y in x])
-
-# want to allow this
-# -----+---->
-#      +---->
-#
 
