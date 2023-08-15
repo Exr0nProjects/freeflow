@@ -24,8 +24,12 @@ def Print(x):
 
 def SimpleTee(*funcs):
     def fn(x):
-        print("teeing!", x)
         return map(lambda f: f(x), funcs)
+    return fn
+
+def EagerTee(*funcs):
+    def fn(x):
+        return [f(x) for f in funcs]
     return fn
 
 def compose(*funcs: List[Callable]):
@@ -51,25 +55,19 @@ def ff_eager(x_arr):
             x = f(x)
         return x
     def gen(*funcs: List[Callable]):
-        for x in x_arr:
-            yield split_composition(funcs, x)
+        return [split_composition(funcs, x) for x in x_arr]
     return gen
 
-# def ff(input: Iterable[T]):
-#     class Curried(Iterable):
-#         def __init__(self, *segments: List[Segment]):
-#             self.segments = segments
-#             # todo: type checking: https://stackoverflow.com/a/50181256
-#             self.composition = compose(segments)
-#         def __iter__(self):
-#             yield from self.composition(input)
-#     return Curried
 
 if __name__ == '__main__':
     # comp = compose(Ret1, print)
     # print(comp("hewo"))
-    g = [*ff('hello!')(SimpleTee(Print, compose(Ret1, Print)))]
-    print(g)
+
+    # g = [*ff('hello!')(SimpleTee(Print, compose(Ret1, Print)))]
+    # print(g)
+
+    ff_eager('hello')(EagerTee(Print, compose(Ret1, Print)))
+
     # print(list(ff('hello!')(Noop)))
     # ff('hello!')(Print, SimpleTee(compose(Ret1, print),
     #                               Print))
