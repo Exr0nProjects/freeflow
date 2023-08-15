@@ -78,3 +78,17 @@ if __name__ == '__main__':
                               [ord, lambda x: x**2]), Inspect("after tee"))
 
 
+
+
+
+
+
+
+    # data pipe:
+    # 'hello' --- print --- + --- print ----|
+
+    # ---- process ---- + --- another fn --+
+    #                   |                  |
+    #                   +---- something ---+----->
+
+
