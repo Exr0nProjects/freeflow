@@ -89,6 +89,6 @@ if __name__ == '__main__':
 
     # ---- process ---- + --- another fn --+
     #                   |                  |
-    #                   +---- something ---+----->
+    #                   +---- something ---+--- batch -->
 
 
