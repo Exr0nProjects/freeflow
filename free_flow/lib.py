@@ -1,6 +1,7 @@
 from typing import TypeVar, Generic, List
 from collections.abc import Iterable, Iterator, Callable
 from abc import ABC, abstractmethod
+from inspect import getsource
 
 T = TypeVar('T')
 W = TypeVar('W')
@@ -38,6 +39,17 @@ class Segment(ABC):
     def eager(self, v: bool):
         self._eager = v
 
+def dangerous_eval_attr(s):
+    '''
+    Dangerous because it executes arbitrary code. Do not use on untrusted input.
+
+    Usage: ff(['hello   '])( dea('.strip().upper()') )
+    instead of having to do  mc('strip'), mc('upper')
+    (from operator import itemgetter as ig, methodcaller as mc, attrgetter as ag)
+
+    todo: make this using macros. macropy?
+    '''
+    return lambda _: eval(f'_{s}')
 
 def compose(*funcs: List[Callable]):
     def composition(x):
@@ -55,10 +67,15 @@ class T(Segment):
         else: return map(lambda f: f(x), self.funcs)
 
 
-def ff(x_arr, eager=False):
+ff_default_eager = True
+def ff(x_arr, eager=ff_default_eager, test_single=False):
+    if test_single: x_arr = x_arr[:1]
     def split_composition(funcs, x):
         for f in funcs:
-            x = f(x)
+            try:
+                x = f(x)
+            except Exception as e:
+                raise ValueError('got error', e, 'when applying', getsource(f), 'to', x)    # todo: actually helpful errors that tell you what went wrong and what the types/values involved were
         return x
     def gen(*funcs: List[Callable]):
         for x in x_arr:
@@ -70,7 +87,14 @@ def ff(x_arr, eager=False):
         return [split_composition(funcs, x) for x in x_arr]
     return gen_eager if eager else gen
 
+# same as ff but take the functions as curry first, before the data
+def rff(*funcs: List[Callable], eager=ff_default_eager, test_single=False):
+    def inner(x_arr):
+        return ff(x_arr, eager, test_single)(*funcs)
+    return inner
+
 # TODO: print the graph! https://github.com/pydot/pydot
+# TODO: make a flatten utility? and a *apply utility? (eg. something turns arr into arr[arr], then i want to apply smt to each thing of the inner
 
 if __name__ == '__main__':
     x = ff('hello', eager=True)(
