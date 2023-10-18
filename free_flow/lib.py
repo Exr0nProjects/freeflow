@@ -1,7 +1,12 @@
 from typing import TypeVar, Generic, List
 from collections.abc import Iterable, Iterator, Callable
 from abc import ABC, abstractmethod
-from inspect import getsource
+from inspect import getsource, signature
+
+from rich.console import Console
+console = Console()
+
+ff_default_eager = True
 
 T = TypeVar('T')
 W = TypeVar('W')
@@ -16,7 +21,7 @@ def Ret1(x):
     return 1
 
 def Print(x):
-    print(x)
+    console.print(x)
     return x
 
 
@@ -25,19 +30,20 @@ def Print(x):
 
 def Inspect(label: str):
     def ret(x):
-        print(label + ":", x)
+        console.print(label + ":", x, style="bold")
         return x
+    ret.__qualname__ = "Inspect"
     return ret
 
-class Segment(ABC):
-    def __init__(self):
-        self._eager = False
-    @property
-    def eager(self):
-        return self._eager
-    @eager.setter
-    def eager(self, v: bool):
-        self._eager = v
+# class Segment(ABC):
+#     def __init__(self):
+#         self._eager = False
+#     @property
+#     def eager(self):
+#         return self._eager
+#     @eager.setter
+#     def eager(self, v: bool):
+#         self._eager = v
 
 def dangerous_eval_attr(s):
     '''
@@ -58,22 +64,39 @@ def compose(*funcs: List[Callable]):
         return x
     return composition
 
-class T(Segment):
-    def __init__(self, *funcs_lists: Iterable[Callable or Iterable[Callable]]):
-        self.funcs = [compose(*fl) if isinstance(fl, Iterable) else fl for fl in funcs_lists]
+# class T(Segment):
+#     def __init__(self, *funcs_lists: Iterable[Callable or Iterable[Callable]]):
+#         self.funcs = [compose(*fl) if isinstance(fl, Iterable) else fl for fl in funcs_lists]
 
-    def __call__(self, x):
-        if self.eager: return [f(x) for f in self.funcs]
-        else: return map(lambda f: f(x), self.funcs)
+#     def __call__(self, x):
+#         if self.eager: return [f(x) for f in self.funcs]
+#         else: return map(lambda f: f(x), self.funcs)
 
+def getname(obj):
+    if isinstance(obj, Iterable):
+        return ' '.join(getname(o) for o in obj)
+    if callable(obj) and obj.__qualname__ == '<lambda>':
+        # console.print("hewwwwwwwwwwwwwwwwwwww", obj, style="blue")
+        # console.print(getsource(obj))
+        # console.print(type(getsource(obj)))
+        # console.print("\n\n\n")
+        # return 'λ(' + getsource(obj) + ')'
+        return 'λ'
+    return obj.__qualname__
 
-ff_default_eager = True
+def T(*funcs_lists, eager=ff_default_eager):
+    funcs = [compose(*fl) if isinstance(fl, Iterable) else fl for fl in funcs_lists]
+    ret = lambda x: [f(x) for f in funcs] if eager else map(lambda f: f(x), funcs)
+    ret.__qualname__ = ' / '.join(getname(fl) for fl in funcs_lists)
+    return ret
+
 def ff(x_arr, eager=ff_default_eager, test_single=False):
     if test_single: x_arr = x_arr[:1]
     def split_composition(funcs, x):
         for f in funcs:
             try:
-                x = f(x)
+                console.print(f"applying {f.__qualname__} to {type(x)}")
+                x = f(x)    # optm: add vectorizability
             except Exception as e:
                 raise ValueError('got error', e, 'when applying', getsource(f), 'to', x)    # todo: actually helpful errors that tell you what went wrong and what the types/values involved were
         return x
@@ -81,9 +104,9 @@ def ff(x_arr, eager=ff_default_eager, test_single=False):
         for x in x_arr:
             yield split_composition(funcs, x)
     def gen_eager(*funcs: List[Callable]):
-        for f in funcs:
-            if isinstance(f, Segment):
-                f.eager = True
+        # for f in funcs:
+        #     if isinstance(f, Segment):
+        #         f.eager = True
         return [split_composition(funcs, x) for x in x_arr]
     return gen_eager if eager else gen
 
@@ -99,7 +122,7 @@ def rff(*funcs: List[Callable], eager=ff_default_eager, test_single=False):
 if __name__ == '__main__':
     x = ff('hello', eager=True)(
         Inspect("initial"), T( Print,
-                              [ord, lambda x: x**2]), Inspect("after tee"))
+                              [ord, lambda x: x**2 ]), Inspect("after tee"))
 
 
 
