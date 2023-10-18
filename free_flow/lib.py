@@ -1,6 +1,5 @@
 from typing import TypeVar, Generic, List
 from collections.abc import Iterable, Iterator, Callable
-from abc import ABC, abstractmethod
 from inspect import getsource, signature
 
 from rich.console import Console
@@ -26,8 +25,6 @@ def Print(x):
 
 
 
-
-
 def Inspect(label: str):
     def ret(x):
         console.print(label + ":", x, style="bold")
@@ -35,27 +32,6 @@ def Inspect(label: str):
     ret.__qualname__ = "Inspect"
     return ret
 
-# class Segment(ABC):
-#     def __init__(self):
-#         self._eager = False
-#     @property
-#     def eager(self):
-#         return self._eager
-#     @eager.setter
-#     def eager(self, v: bool):
-#         self._eager = v
-
-def dangerous_eval_attr(s):
-    '''
-    Dangerous because it executes arbitrary code. Do not use on untrusted input.
-
-    Usage: ff(['hello   '])( dea('.strip().upper()') )
-    instead of having to do  mc('strip'), mc('upper')
-    (from operator import itemgetter as ig, methodcaller as mc, attrgetter as ag)
-
-    todo: make this using macros. macropy?
-    '''
-    return lambda _: eval(f'_{s}')
 
 # def compose(*funcs: List[Callable]):
 #     def composition(x):
@@ -64,18 +40,6 @@ def dangerous_eval_attr(s):
 #         return x
 #     return composition
 
-def safe_compose(*funcs: List[Callable]):
-    def composition(x):
-        for f in funcs:
-            try:
-                console.print(f"[green]{type(x).__name__}[/green] ➡️ {f.__qualname__}")
-                x = f(x)    # optm: add vectorizability
-            except Exception as e:
-                raise ValueError('got error', e, 'when applying', getsource(f), 'to', x)    # todo: actually helpful errors that tell you what went wrong and what the types/values involved were
-        return x
-
-    composition.__qualname__ = getname(funcs)
-    return composition
 
 # class T(Segment):
 #     def __init__(self, *funcs_lists: Iterable[Callable or Iterable[Callable]]):
@@ -98,12 +62,6 @@ def getname(obj):
         # return 'λ(' + getsource(obj) + ')'
         return 'λ'
     return obj.__qualname__
-
-def T(*funcs_lists, eager=ff_default_eager):
-    funcs = [safe_compose(*fl) if isinstance(fl, Iterable) else fl for fl in funcs_lists]
-    ret = lambda x: [f(x) for f in funcs] if eager else map(lambda f: f(x), funcs)
-    ret.__qualname__ = '{ ' + ' / '.join(getname(fl) for fl in funcs_lists) + ' }'
-    return ret
 
 def ff(x_arr, eager=ff_default_eager, test_single=False):
     if test_single: x_arr = x_arr[:1]

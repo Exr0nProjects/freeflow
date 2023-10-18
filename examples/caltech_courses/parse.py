@@ -30,6 +30,8 @@ def inspect(x):
     print(x)
     return x
 
+
+
 publish_date = [ mc('select', '.page-published-at'), lambda x: x[0].text[29:-4] ]
 courses = [ mc('select', '.course-description2'),
            #rff(T(
