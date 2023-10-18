@@ -6,14 +6,14 @@ import requests
 from os.path import join as path_join
 from glob import glob
 
-from freeflow import ff, rff, T, dangerous_eval_attr as dea
+from free_flow import ff, rff, T, dangerous_eval_attr as dea
 from operator import methodcaller as mc, itemgetter as ig, attrgetter as ag
 
 with open('./options.xml', 'r') as rf:
     s = rf.read()
     soup = BeautifulSoup(s, 'html.parser')
 
-    links = [x['href'] for x in soup.select('a')] 
+    links = [x['href'] for x in soup.select('a')]
     shortnames = [x[28:-1] for x in links]
 
 #def get_page(url, shortname):
@@ -32,7 +32,7 @@ def inspect(x):
 
 publish_date = [ mc('select', '.page-published-at'), lambda x: x[0].text[29:-4] ]
 courses = [ mc('select', '.course-description2'),
-           #rff(T( 
+           #rff(T(
            #      mc('select', '.course-description2__title'),
            #      mc('select', '.course-description2__title'),
            #      )

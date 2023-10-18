@@ -88,6 +88,8 @@ def safe_compose(*funcs: List[Callable]):
 def getname(obj):
     if isinstance(obj, Iterable):
         return ' ⮕ '.join(getname(o) for o in obj)
+    if not hasattr(obj, '__qualname__'):
+        return obj.__name__
     if callable(obj) and obj.__qualname__ == '<lambda>':
         # console.print("hewwwwwwwwwwwwwwwwwwww", obj, style="blue")
         # console.print(getsource(obj))
