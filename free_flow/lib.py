@@ -57,11 +57,24 @@ def dangerous_eval_attr(s):
     '''
     return lambda _: eval(f'_{s}')
 
-def compose(*funcs: List[Callable]):
+# def compose(*funcs: List[Callable]):
+#     def composition(x):
+#         for f in funcs:
+#             x = f(x)
+#         return x
+#     return composition
+
+def safe_compose(*funcs: List[Callable]):
     def composition(x):
         for f in funcs:
-            x = f(x)
+            try:
+                console.print(f"[green]{type(x).__name__}[/green] ➡️ {f.__qualname__}")
+                x = f(x)    # optm: add vectorizability
+            except Exception as e:
+                raise ValueError('got error', e, 'when applying', getsource(f), 'to', x)    # todo: actually helpful errors that tell you what went wrong and what the types/values involved were
         return x
+
+    composition.__qualname__ = getname(funcs)
     return composition
 
 # class T(Segment):
@@ -74,7 +87,7 @@ def compose(*funcs: List[Callable]):
 
 def getname(obj):
     if isinstance(obj, Iterable):
-        return ' '.join(getname(o) for o in obj)
+        return ' ⮕ '.join(getname(o) for o in obj)
     if callable(obj) and obj.__qualname__ == '<lambda>':
         # console.print("hewwwwwwwwwwwwwwwwwwww", obj, style="blue")
         # console.print(getsource(obj))
@@ -85,29 +98,21 @@ def getname(obj):
     return obj.__qualname__
 
 def T(*funcs_lists, eager=ff_default_eager):
-    funcs = [compose(*fl) if isinstance(fl, Iterable) else fl for fl in funcs_lists]
+    funcs = [safe_compose(*fl) if isinstance(fl, Iterable) else fl for fl in funcs_lists]
     ret = lambda x: [f(x) for f in funcs] if eager else map(lambda f: f(x), funcs)
-    ret.__qualname__ = ' / '.join(getname(fl) for fl in funcs_lists)
+    ret.__qualname__ = '{ ' + ' / '.join(getname(fl) for fl in funcs_lists) + ' }'
     return ret
 
 def ff(x_arr, eager=ff_default_eager, test_single=False):
     if test_single: x_arr = x_arr[:1]
-    def split_composition(funcs, x):
-        for f in funcs:
-            try:
-                console.print(f"applying {f.__qualname__} to {type(x)}")
-                x = f(x)    # optm: add vectorizability
-            except Exception as e:
-                raise ValueError('got error', e, 'when applying', getsource(f), 'to', x)    # todo: actually helpful errors that tell you what went wrong and what the types/values involved were
-        return x
     def gen(*funcs: List[Callable]):
         for x in x_arr:
-            yield split_composition(funcs, x)
+            yield safe_compose(*funcs)(x)
     def gen_eager(*funcs: List[Callable]):
         # for f in funcs:
         #     if isinstance(f, Segment):
         #         f.eager = True
-        return [split_composition(funcs, x) for x in x_arr]
+        return [safe_compose(*funcs)(x) for x in x_arr]
     return gen_eager if eager else gen
 
 # same as ff but take the functions as curry first, before the data
