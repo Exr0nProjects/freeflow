@@ -18,13 +18,6 @@ class FlowError(Exception):
 class Segment(ABC):
     def __init__(self):
         pass
-        # self._eager = False
-    # @property
-    # def eager(self):
-    #     return self._eager
-    # @eager.setter
-    # def eager(self, v: bool):
-    #     self._eager = v
 
     @abstractmethod
     def __call__(self):
@@ -124,7 +117,7 @@ class Compose(Segment):
     def __call__(self, x):
         for f in self.segs:
             try:
-                console.print(f"[green]{type(x).__name__}[/green] ➡️ {repr(f)}")
+                # console.print(f"[green]{type(x).__name__}[/green] ➡️ {repr(f)}")
                 x = f(x)    # optm: add vectorizability
             except Exception as e:
                 raise FlowError(e, f, x)

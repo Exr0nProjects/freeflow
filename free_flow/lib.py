@@ -10,8 +10,6 @@ ff_default_eager = True
 T = TypeVar('T')
 W = TypeVar('W')
 
-# def map(fn: Callable[[T], W]):
-#     pass
 
 def Noop(x):
     return x
@@ -35,19 +33,12 @@ def Inspect(label: str):
 
 from segments import ff
 # TODO: print the graph! https://github.com/pydot/pydot
-# TODO: make a flatten utility? and a *apply utility? (eg. something turns arr into arr[arr], then i want to apply smt to each thing of the inner
+# TODO: make a flatten utility?
 
 if __name__ == '__main__':
     x = ff('hello', eager=True)(
         Inspect("initial"), T( Print,
                               [ord, lambda x: x**2 ]), Inspect("after tee"))
-
-
-
-
-
-
-
 
     # data pipe:
     # 'hello' --- print --- + --- print ----|
