@@ -6,8 +6,8 @@ import requests
 from os.path import join as path_join
 from glob import glob
 
-from free_flow import ff, rff, T, dangerous_eval_attr as dea
-from operator import methodcaller as mc, itemgetter as ig, attrgetter as ag
+from free_flow import ff, rff, T, dea, mc, ig, ag
+# from operator import methodcaller as mc, itemgetter as ig, attrgetter as ag
 
 with open('./options.xml', 'r') as rf:
     s = rf.read()
@@ -39,7 +39,11 @@ courses = [ mc('select', '.course-description2'),
            #      mc('select', '.course-description2__title'),
            #      )
            #),
-           rff(T(   [ mc('select', '.course-description2__title'), dea('[0].text.strip()') ],  ag('text')   ) )
+           rff(T(
+                    [ mc('select', '.course-description2__title'), dea('[0].text.strip()') ],
+                    ag('text')
+            ))
+
            #rff(T(   [ mc('select', '.course-description2__title'), ig(0), ag('text'), mc('strip') ],  ag('text')   ) )
        ]
 
@@ -55,9 +59,13 @@ data = lambda fs: ff(
     )(read_to_soup, *fs)
 
 x = data(courses)
-print(x)
+
+# x = ff(glob('./pages/*.html'))(read_to_soup, *courses)
+# print(x)
 flat = [a for y in x for a in y]
 
+
+print(flat[:10])
 #from json import dump
 #with open('all_courses.json', 'w') as wf:
 #    dump(flat, wf)

@@ -1,1 +1,1 @@
-from .lib import ff, rff, T, dangerous_eval_attr
+from .segments import ff, rff, Tee as T, dea, mc, ig, ag
