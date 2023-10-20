@@ -40,7 +40,8 @@ courses = [ mc('select', '.course-description2'),
            #      )
            #),
            rff(T(
-                    [ mc('select', '.course-description2__title'), dea('[0].text.strip()') ],
+                    # [ mc('select', '.course-description2__title'), dea('[0].text.strip()') ],
+                    dea(".select('.course-description2__title')[0].text.strip()"),
                     ag('text')
             ))
 
